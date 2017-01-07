@@ -27,39 +27,44 @@ class suppress_stdout_stderr(object):
         os.close(self.null_fds[1])
 
 def evaluate_expression(valobj, expr):
-    return valobj.GetProcess().GetSelectedThread().GetSelectedFrame().EvaluateExpression(expr)    
+    return valobj.GetProcess().GetSelectedThread().GetSelectedFrame().EvaluateExpression(expr)
 
 def format (valobj,internal_dict):
     # fetch data
     data = valobj.GetValueForExpressionPath(".m_storage.m_data.array")
     num_data_elements = data.GetNumChildren()
+    rows = cols = 0
+    fixed_size = data.IsValid()
 
     # return usual summary if storage can not be accessed
-    if not data.IsValid():
-        return valobj.GetSummary()
+    if fixed_size:
+        # determine expression path of the current valobj
+        stream = lldb.SBStream()
+        valobj.GetExpressionPath(stream)
+        valobj_expression_path = stream.GetData()
 
-    # determine expression path of the current valobj
-    stream = lldb.SBStream()
-    valobj.GetExpressionPath(stream)
-    valobj_expression_path = stream.GetData()
+        # determine rows and cols
+        with suppress_stdout_stderr():
+            rows = evaluate_expression(valobj, valobj_expression_path+".rows()").GetValueAsSigned()
+            cols = evaluate_expression(valobj, valobj_expression_path+".cols()").GetValueAsSigned()
+            #rows = lldb.frame.EvaluateExpression(valobj_expression_path+".rows()").GetValueAsSigned()
+            #cols = lldb.frame.EvaluateExpression(valobj_expression_path+".cols()").GetValueAsSigned()
 
-    # determine rows and cols
-    rows = cols = 0
-    with suppress_stdout_stderr():
-        rows = evaluate_expression(valobj, valobj_expression_path+".rows()").GetValueAsSigned()
-        cols = evaluate_expression(valobj, valobj_expression_path+".cols()").GetValueAsSigned()
-        #rows = lldb.frame.EvaluateExpression(valobj_expression_path+".rows()").GetValueAsSigned()
-        #cols = lldb.frame.EvaluateExpression(valobj_expression_path+".cols()").GetValueAsSigned()
+        #print(valobj.CreateValueFromExpression("bla", valobj_expression_path+".rows()"))
 
-    #print(valobj.CreateValueFromExpression("bla", valobj_expression_path+".rows()"))
+    else:
+        data = valobj.GetValueForExpressionPath(".m_storage.m_data")
+        rows = valobj.GetValueForExpressionPath(".m_storage.m_rows").GetValueAsSigned()
+        cols = valobj.GetValueForExpressionPath(".m_storage.m_cols").GetValueAsSigned()
+
 
     output = ""
 
     # check that the data layout fits a regular dense matrix
-    if rows*cols != num_data_elements:
-      print("error: eigen data formatter: could not infer data layout. printing raw data instead")
-      cols = 1
-      rows = num_data_elements
+    if fixed_size and rows*cols != num_data_elements:
+        print("error: eigen data formatter: could not infer data layout. printing raw data instead")
+        cols = 1
+        rows = num_data_elements
 
     # print matrix dimensions
     output += "rows: " + str(rows) + ", cols: " + str(cols) + "\n["
@@ -75,9 +80,9 @@ def format (valobj,internal_dict):
             output += " "
 
         for j in range(0,cols):
-            val = data.GetChildAtIndex(j+i*cols).GetValue()
-            output += data.GetChildAtIndex(j+i*cols).GetValue().rjust(padding+1, ' ')
-        
+            val = data.GetChildAtIndex(j+i*cols, 0, 1).GetValue()
+            output += str(val).rjust(padding+1, ' ')
+
         if i!=rows-1:
             output += ";\n"
 
