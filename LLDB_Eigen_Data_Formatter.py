@@ -54,9 +54,15 @@ def format (valobj,internal_dict):
 
     else:
         data = valobj.GetValueForExpressionPath(".m_storage.m_data")
-        rows = valobj.GetValueForExpressionPath(".m_storage.m_rows").GetValueAsSigned()
-        cols = valobj.GetValueForExpressionPath(".m_storage.m_cols").GetValueAsSigned()
-
+        tr = valobj.GetValueForExpressionPath(".m_storage").GetChildMemberWithName('m_rows')
+        tc = valobj.GetValueForExpressionPath(".m_storage").GetChildMemberWithName('m_cols')
+        if tr.IsValid():
+            rows = tr.GetValueAsSigned()
+        if tc.IsValid():
+            cols = tc.GetValueAsUnsigned()
+        else:
+            # object likely a dynamic vector (need at least one column)
+            cols = 1
 
     output = ""
 
