@@ -30,6 +30,8 @@ def evaluate_expression(valobj, expr):
     return valobj.GetProcess().GetSelectedThread().GetSelectedFrame().EvaluateExpression(expr)
 
 def print_raw_matrix(valobj, rows, cols):
+    if rows*cols > 100:
+      return "[matrix to large]"
     output = ""
     # print matrix dimensions
     output += "rows: " + str(rows) + ", cols: " + str(cols) + "\n["
