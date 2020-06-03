@@ -9,7 +9,7 @@ def __lldb_init_module (debugger, dict):
 class suppress_stdout_stderr(object):
     def __init__(self):
         # Open a pair of null files
-        self.null_fds =  [os.open(os.devnull,os.O_RDWR) for x in xrange(2)]
+        self.null_fds =  [os.open(os.devnull,os.O_RDWR) for x in range(2)]
         # Save the actual stdout (1) and stderr (2) file descriptors.
         self.save_fds = (os.dup(1), os.dup(2))
 
@@ -38,15 +38,15 @@ def print_raw_matrix(valobj, rows, cols):
 
     # determine padding
     padding = 1
-    for i in xrange(0, rows*cols):
+    for i in range(0, rows*cols):
         padding = max(padding, len(str(valobj.GetChildAtIndex(i, lldb.eNoDynamicValues, True).GetValue())))
 
     # print values
-    for i in xrange(0,rows):
+    for i in range(0,rows):
         if i!=0:
             output += " "
 
-        for j in xrange(0,cols):
+        for j in range(0,cols):
             val = valobj.GetChildAtIndex(j+i*cols, lldb.eNoDynamicValues, True).GetValue()
             output += val.rjust(padding+1, ' ')
         
