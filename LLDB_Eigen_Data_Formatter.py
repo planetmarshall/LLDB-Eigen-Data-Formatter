@@ -3,6 +3,7 @@ import os
 
 def __lldb_init_module (debugger, dict):
     debugger.HandleCommand("type summary add -x \"Eigen::Matrix\" -F LLDB_Eigen_Data_Formatter.format_matrix")
+    debugger.HandleCommand("type summary add -x \"Eigen::Array\" -F LLDB_Eigen_Data_Formatter.format_matrix")
 
 # Define a context manager to suppress stdout and stderr.
 #  see http://stackoverflow.com/questions/11130156/suppress-stdout-stderr-print-from-python-functions
